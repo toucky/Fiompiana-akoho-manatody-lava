@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide Technique Poules Pondeuses - APP MADA</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .app-signature {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 40;
+            background: linear-gradient(135deg, #166534 0%, #15803d 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            font-weight: 800;
+            font-size: 0.85rem;
+            border-bottom-right-radius: 12px;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+            letter-spacing: 1px;
+        }
+        .lang-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 40;
+            background: white;
+            color: #166534;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 700;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            cursor: pointer;
+            border: 2px solid #166534;
+            transition: all 0.2s;
+        }
+        .lang-btn:hover { background: #f0fdf4; transform: scale(1.05); }
+        
+        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .card-hover:hover { transform: translateY(-2px); transition: all 0.2s; }
+        
+        /* Modal Overlay Styles (PRO prompt + hidden Admin) */
+        .app-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(20, 83, 45, 0.95);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+        .app-modal.hidden { display: none !important; }
+
+        /* PRO lock badge */
+        .pro-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #b45309;
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: .5px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            vertical-align: middle;
+        }
+        .pro-ok-badge {
+            display: none;
+            align-items: center;
+            gap: 4px;
+            background: #15803d;
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 999px;
+        }
+        body.is-pro .pro-badge { display: none; }
+        body.is-pro .pro-ok-badge { display: inline-flex; }
+        /* App signature is tappable (12x to open admin) */
+        .app-signature { cursor: pointer; user-select: none; -webkit-user-select: none; }
+        .app-signature:active { transform: scale(0.96); }
+        
+        /* Custom scrollbar for tables */
+        .overflow-x-auto::-webkit-scrollbar { height: 6px; }
+        .overflow-x-auto::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="pb-20 md:pb-0">
+
+    <!-- ===== PRO PROMPT MODAL (shown when a free user taps a locked feature) ===== -->
+    <div id="proModal" class="app-modal hidden">
+        <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl max-w-md w-full text-center border-4 border-yellow-500 relative max-h-full overflow-y-auto">
+            <button onclick="closeProModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+                <i data-lucide="x"></i>
+            </button>
+
+            <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-600 shadow-inner">
+                <i data-lucide="crown" size="40"></i>
+            </div>
+
+            <h3 class="text-xl font-extrabold text-gray-800 mb-1" data-key="pro_title">Fonctionnalité PRO</h3>
+            <p class="text-sm text-gray-500 mb-5" data-key="pro_desc">Débloquez tous les calculateurs de l'application.</p>
+
+            <div class="bg-gray-100 p-4 rounded-lg mb-4 border border-gray-300">
+                <p class="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1" data-key="id_label">ID Appareil (Tokanana)</p>
+                <p class="text-2xl sm:text-3xl font-mono font-bold text-green-800 tracking-widest" id="proDeviceId">-- --</p>
+            </div>
+
+            <div class="mb-4 text-left bg-yellow-50 p-4 rounded-lg border border-yellow-200 shadow-sm">
+                <p class="text-gray-800 font-medium leading-relaxed text-sm" data-key="pro_sms">
+                    Alefaso SMS any amin'ny laharana <strong class="text-green-700 whitespace-nowrap">034 97 429 61</strong> ny ID eo ambony mba ahazoanao ny kaody.
+                </p>
+                <div class="mt-3 flex items-center justify-between border-t border-yellow-200 pt-2">
+                    <span class="text-sm text-gray-600 font-bold" data-key="price_label">Sarany:</span>
+                    <span class="bg-green-600 text-white px-3 py-1 rounded-full font-bold text-sm">20.000 Ar</span>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 text-sm text-blue-900 flex items-start gap-2 text-left">
+                <i data-lucide="info" class="w-5 h-5 flex-shrink-0 mt-0.5"></i>
+                <span data-key="pro_note12">Rehefa voaloa: tsindrio <strong>in-12</strong> ny logo "APP MADA" (ambony havia) hanokafana ny fampidirana kaody.</span>
+            </div>
+
+            <button onclick="closeProModal()" class="mt-5 w-full bg-gray-800 hover:bg-black text-white font-bold py-3 rounded-lg transition-transform active:scale-95" data-key="btn_understood">J'ai compris</button>
+        </div>
+    </div>
+
+    <!-- ===== HIDDEN ADMIN MODAL (opened by tapping APP MADA logo 12x) ===== -->
+    <div id="adminModal" class="app-modal hidden">
+        <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl max-w-md w-full text-center border-4 border-green-600 relative max-h-full overflow-y-auto">
+            <button onclick="closeAdminModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+                <i data-lucide="x"></i>
+            </button>
+
+            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-green-700 shadow-inner">
+                <i data-lucide="shield-check" size="40"></i>
+            </div>
+
+            <h3 class="text-xl font-extrabold text-gray-800 mb-4" data-key="admin_title">Activation (Admin)</h3>
+
+            <div class="bg-gray-100 p-4 rounded-lg mb-6 border border-gray-300">
+                <p class="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1" data-key="id_label">ID Appareil (Tokanana)</p>
+                <p class="text-3xl font-mono font-bold text-green-800 tracking-widest" id="displayDeviceId">-- --</p>
+            </div>
+
+            <div class="space-y-4">
+                <input type="text" id="authInput" placeholder="Entrez le code ici" class="w-full p-4 border-2 border-gray-300 rounded-lg text-center font-mono text-xl uppercase focus:border-green-500 focus:ring-4 focus:ring-green-100 outline-none transition-all placeholder-gray-400 font-bold text-gray-700">
+                <button onclick="verifyCode()" class="w-full bg-green-700 hover:bg-green-800 text-white font-extrabold py-4 rounded-lg transition-transform active:scale-95 shadow-lg flex justify-center items-center gap-2">
+                    <i data-lucide="unlock"></i> HAMARINO / VALIDER
+                </button>
+            </div>
+
+            <div class="mt-4 text-xs text-gray-400">APP MADA - Version Sécurisée</div>
+        </div>
+    </div>
+
+    <!-- Signature APP MADA (tap 12x to open admin) -->
+    <div class="app-signature" id="appSignature" onclick="handleLogoTap()" title="APP MADA">APP MADA</div>
+
+    <!-- Language Toggle -->
+    <button onclick="toggleLanguage()" class="lang-btn flex items-center gap-2">
+        <span id="langIcon">🇲🇬</span> <span id="langText">MALAGASY</span>
+    </button>
+
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar Navigation (Desktop) -->
+        <aside class="hidden md:flex w-64 flex-col bg-white border-r border-gray-200">
+            <div class="h-16 flex items-center justify-center border-b border-gray-200 mt-8">
+                <h1 class="text-xl font-bold text-green-700 flex items-center gap-2">
+                    <i data-lucide="egg" class="text-yellow-500"></i> Pondeuses Pro
+                </h1>
+            </div>
+            <nav class="flex-1 overflow-y-auto py-4">
+                <ul class="space-y-1 px-2">
+                    <li><button onclick="switchTab('home')" class="nav-btn w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 hover:bg-green-50 text-gray-700 font-medium active-nav" data-tab="home"><i data-lucide="home" size="20"></i> <span data-key="nav_home">Accueil</span></button></li>
+                    <li><button onclick="switchTab('housing')" class="nav-btn w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 hover:bg-green-50 text-gray-700 font-medium" data-tab="housing"><i data-lucide="home-icon" size="20"></i> <span data-key="nav_housing">Logement</span> <span class="pro-badge ml-auto"><i data-lucide="lock" class="w-3 h-3"></i></span><span class="pro-ok-badge ml-auto"><i data-lucide="check" class="w-3 h-3"></i></span></button></li>
+                    <li><button onclick="switchTab('feeding')" class="nav-btn w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 hover:bg-green-50 text-gray-700 font-medium" data-tab="feeding"><i data-lucide="utensils" size="20"></i> <span data-key="nav_feeding">Alimentation</span> <span class="pro-badge ml-auto"><i data-lucide="lock" class="w-3 h-3"></i></span><span class="pro-ok-badge ml-auto"><i data-lucide="check" class="w-3 h-3"></i></span></button></li>
+                    <li><button onclick="switchTab('health')" class="nav-btn w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 hover:bg-green-50 text-gray-700 font-medium" data-tab="health"><i data-lucide="activity" size="20"></i> <span data-key="nav_health">Santé</span></button></li>
+                    <li><button onclick="switchTab('simulation')" class="nav-btn w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 hover:bg-green-50 text-gray-700 font-medium" data-tab="simulation"><i data-lucide="calculator" size="20"></i> <span data-key="nav_sim">Simulation</span> <span class="pro-badge ml-auto"><i data-lucide="lock" class="w-3 h-3"></i></span><span class="pro-ok-badge ml-auto"><i data-lucide="check" class="w-3 h-3"></i></span></button></li>
+                </ul>
+            </nav>
+            <!-- Source section removed as requested -->
+            <div class="p-4 border-t border-gray-200">
+               <!-- Empty footer for spacing if needed -->
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-8 pt-12 md:pt-8">
+            
+            <!-- Mobile Header -->
+            <div class="md:hidden flex items-center justify-between mb-6 pl-24">
+                <h1 class="text-lg font-bold text-green-700">Pondeuses Pro</h1>
+            </div>
+
+            <!-- TAB: ACCUEIL -->
+            <div id="home" class="tab-content active">
+                <div class="mb-8 mt-6">
+                    <h2 class="text-2xl font-bold text-gray-800" data-key="home_title">Guide de l'Élevage Moderne</h2>
+                    <p class="text-gray-600" data-key="home_subtitle">Techniques optimisées pour la poule pondeuse rousse.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 card-hover">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4 text-blue-600">
+                            <i data-lucide="trending-up"></i>
+                        </div>
+                        <h3 class="font-bold text-lg mb-2" data-key="card1_title">Rentabilité</h3>
+                        <p class="text-sm text-gray-600" data-key="card1_desc">Une gestion rigoureuse peut offrir jusqu'à 100% de bénéfice. Une poule peut pondre 295 à 305 œufs sur 72 semaines.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 card-hover">
+                        <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mb-4 text-yellow-600">
+                            <i data-lucide="sun"></i>
+                        </div>
+                        <h3 class="font-bold text-lg mb-2" data-key="card2_title">Conditions Clés</h3>
+                        <p class="text-sm text-gray-600" data-key="card2_desc">La lumière et la température (33-35°C au démarrage) sont cruciales. Évitez les courants d'air chez les poussins.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 card-hover">
+                        <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4 text-red-600">
+                            <i data-lucide="alert-triangle"></i>
+                        </div>
+                        <h3 class="font-bold text-lg mb-2" data-key="card3_title">Hygiène Stricte</h3>
+                        <p class="text-sm text-gray-600" data-key="card3_desc">Le vide sanitaire de 15 jours et la propreté sont vos meilleurs alliés contre les maladies.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="bg-green-700 p-4 text-white font-bold flex justify-between items-center">
+                        <span data-key="chart_title">Cycle de Production</span>
+                        <i data-lucide="bar-chart-2"></i>
+                    </div>
+                    <div class="p-6">
+                        <div class="relative h-64 w-full">
+                            <canvas id="cycleChart"></canvas>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 text-center text-sm">
+                            <div class="p-3 bg-gray-50 rounded">
+                                <span class="block font-bold text-gray-700" data-key="cycle_start">Démarrage Ponte</span>
+                                <span class="text-gray-500">20-23 semaines</span>
+                            </div>
+                            <div class="p-3 bg-green-50 rounded border border-green-100">
+                                <span class="block font-bold text-green-700" data-key="cycle_peak">Pic de Production (94%)</span>
+                                <span class="text-green-600">27-29 semaines</span>
+                            </div>
+                            <div class="p-3 bg-gray-50 rounded">
+                                <span class="block font-bold text-gray-700" data-key="cycle_end">Fin de Cycle</span>
+                                <span class="text-gray-500">72 semaines</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: LOGEMENT -->
+            <div id="housing" class="tab-content">
+                <div class="mb-6 mt-6">
+                    <h2 class="text-2xl font-bold text-gray-800" data-key="housing_title">Infrastructure & Logement</h2>
+                    <p class="text-gray-600" data-key="housing_subtitle">Calculateur de densité et normes techniques.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Calculator -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <h3 class="font-bold text-lg mb-4 text-green-800 border-b pb-2" data-key="calc_space_title">Calculateur d'Espace</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1" data-key="lbl_birds_count">Nombre de sujets</label>
+                                <input type="number" id="housingInput" placeholder="0" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none">
+                            </div>
+
+                            <button onclick="confirmHousing()" class="w-full mt-3 bg-green-700 hover:bg-green-800 text-white font-bold py-3 rounded-lg transition-transform active:scale-95 flex items-center justify-center gap-2">
+                                <i data-lucide="check-circle"></i>
+                                <span data-key="btn_confirm">Confirmer</span>
+                                <span class="pro-badge"><i data-lucide="lock" class="w-3 h-3"></i> PRO</span>
+                                <span class="pro-ok-badge"><i data-lucide="check" class="w-3 h-3"></i> PRO</span>
+                            </button>
+
+                            <div class="space-y-3 mt-6">
+                                <div class="bg-blue-50 p-3 rounded flex justify-between items-center">
+                                    <div>
+                                        <p class="font-bold text-blue-800" id="lbl_poussin">Poussins (0-8 sem)</p>
+                                        <p class="text-xs text-blue-600" id="norm_poussin">Norme: 30-40 sujets/m²</p>
+                                    </div>
+                                    <span class="text-xl font-bold text-blue-900" id="resPoussin">0 m²</span>
+                                </div>
+                                <div class="bg-yellow-50 p-3 rounded flex justify-between items-center">
+                                    <div>
+                                        <p class="font-bold text-yellow-800" id="lbl_poulette">Poulettes (8-20 sem)</p>
+                                        <p class="text-xs text-yellow-600" id="norm_poulette">Norme: 12-20 sujets/m²</p>
+                                    </div>
+                                    <span class="text-xl font-bold text-yellow-900" id="resPoulette">0 m²</span>
+                                </div>
+                                <div class="bg-green-50 p-3 rounded flex justify-between items-center border border-green-200">
+                                    <div>
+                                        <p class="font-bold text-green-800" id="lbl_pondeuse">Pondeuses (>20 sem)</p>
+                                        <p class="text-xs text-green-600" id="norm_pondeuse">Norme: 5-6 sujets/m²</p>
+                                    </div>
+                                    <span class="text-xl font-bold text-green-900" id="resPondeuse">0 m²</span>
+                                </div>
+                            </div>
+                            <div class="mt-4 pt-4 border-t border-gray-100 text-sm text-gray-500">
+                                <p><i data-lucide="lightbulb" class="inline w-4 h-4 mr-1"></i> <span data-key="lighting_req">Éclairage requis</span> (3W/m²) : <span id="resLighting" class="font-bold">0 Watts</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Guidelines -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <h3 class="font-bold text-lg mb-4 text-gray-800 border-b pb-2" data-key="building_norms_title">Normes du Bâtiment</h3>
+                        <ul class="space-y-3 text-sm">
+                            <li class="flex gap-3">
+                                <i data-lucide="check-circle" class="text-green-600 flex-shrink-0" size="18"></i>
+                                <span data-key="norm_orientation"><strong>Orientation :</strong> Perpendiculaire aux vents dominants pour éviter la chaleur excessive.</span>
+                            </li>
+                            <li class="flex gap-3">
+                                <i data-lucide="check-circle" class="text-green-600 flex-shrink-0" size="18"></i>
+                                <span data-key="norm_floor"><strong>Sol :</strong> Bétonné ou terre battue facile à nettoyer. Litière de copeaux de 8-10cm d'épaisseur.</span>
+                            </li>
+                            <li class="flex gap-3">
+                                <i data-lucide="check-circle" class="text-green-600 flex-shrink-0" size="18"></i>
+                                <span data-key="norm_perch"><strong>Perchoirs :</strong> 1m de hauteur, à 25cm du mur. Compter 15-20cm de perchoir par poule.</span>
+                            </li>
+                            <li class="flex gap-3">
+                                <i data-lucide="check-circle" class="text-green-600 flex-shrink-0" size="18"></i>
+                                <span data-key="norm_nest"><strong>Pondoirs :</strong> 30x30x30cm. Sombre et calme. 1 nid pour 5 poules.</span>
+                            </li>
+                            <li class="flex gap-3">
+                                <i data-lucide="thermometer" class="text-red-500 flex-shrink-0" size="18"></i>
+                                <span data-key="norm_temp"><strong>Température :</strong> Baissez de 2°C/semaine (Départ 35°C -> Final 24°C). Évitez les variations brusques.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: ALIMENTATION -->
+            <div id="feeding" class="tab-content">
+                <div class="mb-6 mt-6">
+                    <h2 class="text-2xl font-bold text-gray-800" data-key="feed_title">Alimentation & Nutrition</h2>
+                    <p class="text-gray-600" data-key="feed_subtitle">Calcul des besoins journaliers et gestion des transitions.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Ration Calculator -->
+                    <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+                            <i data-lucide="calculator" class="text-green-600"></i> <span data-key="feed_calc_title">Calculateur de Ration Quotidienne</span>
+                        </h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1" data-key="lbl_birds_count">Nombre de poules</label>
+                                <input type="number" id="feedBirds" placeholder="0" class="w-full p-2 border rounded">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1" data-key="lbl_age">Âge (Semaines)</label>
+                                <select id="feedAge" class="w-full p-2 border rounded">
+                                    <!-- Options populated by JS for translation -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <button onclick="confirmFeed()" class="w-full mb-4 bg-green-700 hover:bg-green-800 text-white font-bold py-3 rounded-lg transition-transform active:scale-95 flex items-center justify-center gap-2">
+                            <i data-lucide="check-circle"></i>
+                            <span data-key="btn_confirm">Confirmer</span>
+                            <span class="pro-badge"><i data-lucide="lock" class="w-3 h-3"></i> PRO</span>
+                            <span class="pro-ok-badge"><i data-lucide="check" class="w-3 h-3"></i> PRO</span>
+                        </button>
+                        
+                        <div class="bg-green-50 p-4 rounded-lg flex items-center justify-between border border-green-200">
+                            <div>
+                                <h4 class="font-bold text-green-900" data-key="feed_total_daily">Besoin Journalier Total</h4>
+                                <p class="text-sm text-green-700" data-key="feed_distribute">À distribuer à heures fixes</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="block text-3xl font-bold text-green-800" id="totalFeedResult">0.00 kg</span>
+                                <span class="text-xs text-green-600" id="feedPerBird">0g / sujet</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-6">
+                            <h4 class="font-bold text-sm mb-2 text-gray-700" data-key="feed_rules_title">Règles d'Or :</h4>
+                            <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
+                                <li data-key="rule_water"><strong>Eau :</strong> À volonté ! (Env. 125L / poule sur 72 semaines).</li>
+                                <li data-key="rule_time"><strong>Horaires :</strong> 2 fois par jour (ex: 8h00 et 16h00).</li>
+                                <li data-key="rule_calc"><strong>Calcium :</strong> Dès la 30ème semaine, ajoutez des coquilles d'huîtres.</li>
+                                <li data-key="rule_grit"><strong>Grit (Gravier) :</strong> 500g/100 poules/semaine pour faciliter la digestion.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Transition Tool -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <h3 class="font-bold text-lg mb-4 text-orange-600" data-key="trans_title">Transition Alimentaire</h3>
+                        <p class="text-xs text-gray-500 mb-4" data-key="trans_warn">Ne jamais changer d'aliment brusquement (risque de diarrhée/arrêt de ponte).</p>
+                        
+                        <div class="relative pl-4 border-l-2 border-orange-200 space-y-4">
+                            <div class="text-sm">
+                                <span class="font-bold text-gray-800" data-key="day_1">Jour 1</span>
+                                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1 flex overflow-hidden">
+                                    <div class="bg-gray-400 h-2.5" style="width: 100%"></div>
+                                </div>
+                                <div class="flex justify-between text-xs mt-1">
+                                    <span data-key="old_100">Ancien: 100%</span>
+                                    <span data-key="new_0">Nouveau: 0%</span>
+                                </div>
+                            </div>
+                            <div class="text-sm">
+                                <span class="font-bold text-gray-800" data-key="day_2">Jour 2</span>
+                                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1 flex overflow-hidden">
+                                    <div class="bg-gray-400 h-2.5" style="width: 75%"></div>
+                                    <div class="bg-orange-500 h-2.5" style="width: 25%"></div>
+                                </div>
+                                <div class="flex justify-between text-xs mt-1">
+                                    <span>Ancien: 75%</span>
+                                    <span>Nouveau: 25%</span>
+                                </div>
+                            </div>
+                             <div class="text-sm">
+                                <span class="font-bold text-gray-800" data-key="day_3">Jour 3</span>
+                                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1 flex overflow-hidden">
+                                    <div class="bg-gray-400 h-2.5" style="width: 50%"></div>
+                                    <div class="bg-orange-500 h-2.5" style="width: 50%"></div>
+                                </div>
+                                <div class="flex justify-between text-xs mt-1">
+                                    <span>50% / 50%</span>
+                                </div>
+                            </div>
+                            <div class="text-sm">
+                                <span class="font-bold text-gray-800" data-key="day_5">Jour 5</span>
+                                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1 flex overflow-hidden">
+                                    <div class="bg-orange-500 h-2.5" style="width: 100%"></div>
+                                </div>
+                                <div class="flex justify-between text-xs mt-1">
+                                    <span data-key="new_100">Nouveau: 100%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: SANTÉ -->
+            <div id="health" class="tab-content">
+                <div class="mb-6 mt-6">
+                    <h2 class="text-2xl font-bold text-gray-800" data-key="health_title">Santé & Prophylaxie</h2>
+                    <p class="text-gray-600" data-key="health_subtitle">Planning de vaccination et identification des maladies.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Vaccine Calendar -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <h3 class="font-bold text-lg mb-4 text-blue-800 flex items-center gap-2">
+                            <i data-lucide="calendar"></i> <span data-key="vac_calc_title">Générateur de Calendrier</span>
+                        </h3>
+                        <div class="mb-4">
+                            <label class="block text-sm text-gray-700 mb-1" data-key="lbl_arrival_date">Date d'arrivée des poussins</label>
+                            <input type="date" id="vacDate" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none" onchange="generateVaccines()">
+                        </div>
+
+                        <div class="space-y-3 mt-4" id="vaccineList">
+                            <p class="text-gray-500 italic text-sm" data-key="vac_placeholder">Sélectionnez une date pour voir le planning.</p>
+                        </div>
+                        
+                        <div class="mt-4 bg-blue-50 p-3 rounded text-xs text-blue-800 border border-blue-100">
+                            <strong data-key="note_title">Note :</strong> <span data-key="vac_note">Donnez des vitamines 1 jour avant, le jour même, et 1 jour après le vaccin. Utilisez de l'eau non chlorée.</span>
+                        </div>
+                    </div>
+
+                    <!-- Disease Checker -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <h3 class="font-bold text-lg mb-4 text-red-700" data-key="dis_title">Symptômes & Maladies</h3>
+                        <div class="space-y-2">
+                            <details class="group bg-red-50 p-3 rounded cursor-pointer">
+                                <summary class="font-medium text-red-900 flex justify-between items-center">
+                                    <span data-key="sym_paralysis">Paralysie / Boiterie</span>
+                                    <i data-lucide="chevron-down" class="w-4 h-4 group-open:rotate-180 transition-transform"></i>
+                                </summary>
+                                <div class="mt-2 text-sm text-gray-700">
+                                    <strong data-key="dis_marek">Maladie de Marek :</strong> <span data-key="desc_marek">Souvent chez les jeunes. Amaigrissement, une patte en avant/arrière.</span><br>
+                                    <strong data-key="dis_cholera">Choléra :</strong> <span data-key="desc_cholera">Paralysie des ailes et pattes.</span>
+                                </div>
+                            </details>
+                            <details class="group bg-red-50 p-3 rounded cursor-pointer">
+                                <summary class="font-medium text-red-900 flex justify-between items-center">
+                                    <span data-key="sym_diarrhea">Diarrhée</span>
+                                    <i data-lucide="chevron-down" class="w-4 h-4 group-open:rotate-180 transition-transform"></i>
+                                </summary>
+                                <div class="mt-2 text-sm text-gray-700">
+                                    <strong data-key="dis_cocc">Coccidiose :</strong> <span data-key="desc_cocc">Diarrhée sanguinolente, ailes pendantes.</span><br>
+                                    <strong data-key="dis_cholera">Choléra :</strong> <span data-key="desc_cholera_d">Diarrhée jaune ou verte.</span>
+                                </div>
+                            </details>
+                            <details class="group bg-red-50 p-3 rounded cursor-pointer">
+                                <summary class="font-medium text-red-900 flex justify-between items-center">
+                                    <span data-key="sym_resp">Respiration / Toux</span>
+                                    <i data-lucide="chevron-down" class="w-4 h-4 group-open:rotate-180 transition-transform"></i>
+                                </summary>
+                                <div class="mt-2 text-sm text-gray-700">
+                                    <strong data-key="dis_bronch">Bronchite Infectieuse :</strong> <span data-key="desc_bronch">Toux, œufs déformés.</span><br>
+                                    <strong data-key="dis_newc">Newcastle (Peste) :</strong> <span data-key="desc_newc">Difficulté respiratoire, torticolis, mortalité élevée.</span>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: SIMULATION (PRATIKA) -->
+            <div id="simulation" class="tab-content">
+                <div class="mb-6 mt-6">
+                    <h2 class="text-2xl font-bold text-gray-800" data-key="sim_title">Simulation "Pratika"</h2>
+                    <p class="text-gray-600" data-key="sim_subtitle">Simulateur de production pour estimer votre projet.</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 mb-8">
+                    <div class="flex flex-col md:flex-row items-end gap-4 mb-6">
+                        <div class="w-full md:w-1/3">
+                            <label class="block text-sm font-bold text-gray-700 mb-2" data-key="lbl_sim_birds">Nombre de Poules au départ</label>
+                            <input type="number" id="simBirds" class="w-full p-3 border-2 border-green-500 rounded-lg text-lg font-bold text-green-800" placeholder="0">
+                        </div>
+                        <div class="w-full md:w-1/3">
+                             <button onclick="confirmSimulation()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2">
+                                <i data-lucide="play-circle"></i> <span data-key="btn_run_sim">Lancer la Simulation</span>
+                                <span class="pro-badge"><i data-lucide="lock" class="w-3 h-3"></i> PRO</span>
+                                <span class="pro-ok-badge"><i data-lucide="check" class="w-3 h-3"></i> PRO</span>
+                             </button>
+                        </div>
+                    </div>
+
+                    <div id="simResults" class="hidden animate-fade-in">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                            <div class="bg-green-50 p-4 rounded-lg border border-green-100">
+                                <p class="text-sm text-green-600 font-medium" data-key="sim_res_peak">Pic de Production (Jour)</p>
+                                <p class="text-2xl font-bold text-green-800" id="simPeakEggs">0 Œufs</p>
+                                <p class="text-xs text-green-600" data-key="sim_res_rate">à 94% de réussite</p>
+                            </div>
+                            <div class="bg-orange-50 p-4 rounded-lg border border-orange-100">
+                                <p class="text-sm text-orange-600 font-medium" data-key="sim_res_feed">Conso. Aliment (Cycle)</p>
+                                <p class="text-2xl font-bold text-orange-800" id="simTotalFeed">0 Tonnes</p>
+                                <p class="text-xs text-orange-600">~52kg / poule / 72 sem.</p>
+                            </div>
+                            <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                                <p class="text-sm text-blue-600 font-medium" data-key="sim_res_space">Surface Pondeuse</p>
+                                <p class="text-2xl font-bold text-blue-800" id="simSpace">0 m²</p>
+                                <p class="text-xs text-blue-600" data-key="sim_res_dens">à 6 poules/m²</p>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                                <p class="text-sm text-purple-600 font-medium" data-key="sim_res_water">Eau Totale (Cycle)</p>
+                                <p class="text-2xl font-bold text-purple-800" id="simWater">0 m³</p>
+                                <p class="text-xs text-purple-600">~125L / poule</p>
+                            </div>
+                        </div>
+
+                        <div class="border-t pt-6">
+                            <h3 class="font-bold text-lg mb-4 text-gray-800"><span data-key="sim_tips_title">Conseils Pratiques pour</span> <span id="simCountDisplay">0</span> <span data-key="sim_tips_birds">poules</span> :</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <ul class="list-disc list-inside space-y-2 text-gray-700">
+                                    <li><span data-key="tip_feeder">Prévoir mangeoires</span>: <strong><span id="simFeeders">0</span></strong></li>
+                                    <li><span data-key="tip_nest">Installer nids</span>: <strong><span id="simNests">0</span></strong></li>
+                                    <li><span data-key="tip_perch">Perchoirs</span>: <strong><span id="simPerch">0</span> m</strong></li>
+                                </ul>
+                                <ul class="list-disc list-inside space-y-2 text-gray-700">
+                                    <li><span data-key="tip_light">Éclairage</span>: <strong><span id="simLight">0</span> Watts</strong></li>
+                                    <li data-key="tip_debec">Débécage recommandé entre le 15ème jour et la 18ème semaine.</li>
+                                    <li data-key="tip_ammonia">Attention : Si la litière sent l'ammoniaque, changez-la immédiatement.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Empty State for Sim -->
+                    <div id="simEmpty" class="text-center py-12 text-gray-400">
+                        <i data-lucide="bar-chart" class="w-16 h-16 mx-auto mb-4 opacity-50"></i>
+                        <p data-key="sim_empty">Entrez un nombre de poules pour voir les estimations techniques.</p>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Mobile Navigation (Bottom) -->
+        <nav class="md:hidden fixed bottom-0 w-full bg-white border-t border-gray-200 flex justify-around p-2 z-40">
+            <button onclick="switchTab('home')" class="p-2 flex flex-col items-center text-xs text-gray-600 active-nav-mobile" data-tab="home">
+                <i data-lucide="home"></i> <span data-key="nav_home">Accueil</span>
+            </button>
+            <button onclick="switchTab('housing')" class="p-2 flex flex-col items-center text-xs text-gray-600" data-tab="housing">
+                <i data-lucide="home-icon"></i> <span data-key="nav_housing">Logement</span>
+            </button>
+            <button onclick="switchTab('feeding')" class="p-2 flex flex-col items-center text-xs text-gray-600" data-tab="feeding">
+                <i data-lucide="utensils"></i> <span data-key="nav_feeding">Manger</span>
+            </button>
+            <button onclick="switchTab('health')" class="p-2 flex flex-col items-center text-xs text-gray-600" data-tab="health">
+                <i data-lucide="activity"></i> <span data-key="nav_health">Santé</span>
+            </button>
+            <button onclick="switchTab('simulation')" class="p-2 flex flex-col items-center text-xs text-gray-600" data-tab="simulation">
+                <i data-lucide="calculator"></i> <span data-key="nav_sim_short">Simu</span>
+            </button>
+        </nav>
+
+    </div>
+
+    <!-- Scripts at the end of body for better loading -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    
+    <script>
+        // --- PRO / LICENSE LOGIC START ---
+        const deviceIdKey = 'avi_device_id_v2';
+        const unlockKey = 'avi_unlocked_v2';
+
+        function isPro() {
+            return localStorage.getItem(unlockKey) === 'true';
+        }
+
+        function getDeviceId() {
+            let devId = localStorage.getItem(deviceIdKey);
+            if(!devId) {
+                const generatePart = () => {
+                    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // No I, 1, O, 0 to avoid confusion
+                    let result = '';
+                    for (let i = 0; i < 4; i++) {
+                        result += chars.charAt(Math.floor(Math.random() * chars.length));
+                    }
+                    return result;
+                };
+                devId = `${generatePart()}-${generatePart()}`;
+                localStorage.setItem(deviceIdKey, devId);
+            }
+            return devId;
+        }
+
+        // Reflect PRO status across the UI (badges, body class)
+        function updateProUI() {
+            const devId = getDeviceId();
+            const idEls = [document.getElementById('displayDeviceId'), document.getElementById('proDeviceId')];
+            idEls.forEach(el => { if(el) el.innerText = devId; });
+
+            if(isPro()) {
+                document.body.classList.add('is-pro');
+            } else {
+                document.body.classList.remove('is-pro');
+            }
+        }
+
+        function initAuth() {
+            // No more blocking screen: the app is free to browse.
+            // Only the PRO calculators are gated.
+            getDeviceId();
+            updateProUI();
+        }
+
+        // ===== PRO PROMPT MODAL =====
+        function openProModal() {
+            updateProUI();
+            const m = document.getElementById('proModal');
+            m.classList.remove('hidden');
+            if(window.lucide) lucide.createIcons();
+        }
+        function closeProModal() {
+            document.getElementById('proModal').classList.add('hidden');
+        }
+
+        // ===== HIDDEN ADMIN MODAL (12 taps on logo) =====
+        let logoTaps = 0;
+        let logoTapTimer = null;
+        function handleLogoTap() {
+            logoTaps++;
+            clearTimeout(logoTapTimer);
+            logoTapTimer = setTimeout(() => { logoTaps = 0; }, 2500); // reset if too slow
+            if(logoTaps >= 12) {
+                logoTaps = 0;
+                clearTimeout(logoTapTimer);
+                openAdminModal();
+            }
+        }
+        function openAdminModal() {
+            updateProUI();
+            const m = document.getElementById('adminModal');
+            m.classList.remove('hidden');
+            const input = document.getElementById('authInput');
+            if(input) input.value = '';
+            if(window.lucide) lucide.createIcons();
+        }
+        function closeAdminModal() {
+            document.getElementById('adminModal').classList.add('hidden');
+        }
+
+        function verifyCode() {
+            const input = document.getElementById('authInput').value.trim().toUpperCase().replace(/ /g, '').replace(/-/g, '');
+            const devId = getDeviceId();
+            if(!devId) return;
+
+            const [partAA, partBB] = devId.split('-');
+
+            // Vendor code logic (private generator uses the same rules)
+            const revAA = partAA.split('').reverse().join('');
+            const revBB = partBB.split('').reverse().join('');
+
+            const codePart1 = `0M${revBB}A9`;
+            const codePart2 = `0D${revAA}A6`;
+
+            const expectedFull = `${codePart1}-${codePart2}`;
+            const expectedClean = `${codePart1}${codePart2}`;
+
+            if(input === expectedClean || input === expectedFull) {
+                localStorage.setItem(unlockKey, 'true');
+                updateProUI();
+                closeAdminModal();
+                closeProModal();
+                alert("Misaotra! Nosokafana ny PRO. (Application débloquée)");
+                // Refresh any calculators now that PRO is active
+                calculateHousing();
+                calcFeed();
+                runSimulation();
+            } else {
+                alert("Kaody diso. Hamarino tsara. (Code incorrect)");
+            }
+        }
+        // --- PRO / LICENSE LOGIC END ---
+
+        // ===== PRO GATE for each calculator =====
+        function confirmHousing() {
+            if(!isPro()) { openProModal(); return; }
+            calculateHousing();
+        }
+        function confirmFeed() {
+            if(!isPro()) { openProModal(); return; }
+            calcFeed();
+        }
+        function confirmSimulation() {
+            if(!isPro()) { openProModal(); return; }
+            runSimulation();
+        }
+
+        // Translations Data
+        const translations = {
+            fr: {
+                // Nav
+                nav_home: "Accueil", nav_housing: "Logement", nav_feeding: "Alimentation", 
+                nav_health: "Santé", nav_sim: "Simulation", nav_sim_short: "Simu",
+                // PRO / Modals / Buttons
+                btn_confirm: "Confirmer",
+                pro_title: "Fonctionnalité PRO",
+                pro_desc: "Débloquez tous les calculateurs de l'application.",
+                pro_sms: "Envoyez par SMS votre ID ci-dessus au <strong class='text-green-700 whitespace-nowrap'>034 97 429 61</strong> pour recevoir votre code.",
+                pro_note12: "Après paiement : touchez <strong>12 fois</strong> le logo \"APP MADA\" (en haut à gauche) pour ouvrir la saisie du code.",
+                btn_understood: "J'ai compris",
+                id_label: "ID Appareil (Tokanana)",
+                price_label: "Prix :",
+                admin_title: "Activation (Admin)",
+                // Source info removed here
+                // Home
+                home_title: "Guide de l'Élevage Moderne", home_subtitle: "Techniques optimisées pour la poule pondeuse rousse.",
+                card1_title: "Rentabilité", card1_desc: "Une gestion rigoureuse peut offrir jusqu'à 100% de bénéfice. Une poule peut pondre 295 à 305 œufs sur 72 semaines.",
+                card2_title: "Conditions Clés", card2_desc: "La lumière et la température (33-35°C au démarrage) sont cruciales. Évitez les courants d'air chez les poussins.",
+                card3_title: "Hygiène Stricte", card3_desc: "Le vide sanitaire de 15 jours et la propreté sont vos meilleurs alliés contre les maladies.",
+                chart_title: "Cycle de Production", cycle_start: "Démarrage Ponte", cycle_peak: "Pic de Production", cycle_end: "Fin de Cycle",
+                // Housing
+                housing_title: "Infrastructure & Logement", housing_subtitle: "Calculateur de densité et normes techniques.",
+                calc_space_title: "Calculateur d'Espace", lbl_birds_count: "Nombre de sujets",
+                lighting_req: "Éclairage requis", building_norms_title: "Normes du Bâtiment",
+                norm_orientation: "<strong>Orientation :</strong> Perpendiculaire aux vents dominants pour éviter la chaleur excessive.",
+                norm_floor: "<strong>Sol :</strong> Bétonné ou terre battue facile à nettoyer. Litière de copeaux de 8-10cm d'épaisseur.",
+                norm_perch: "<strong>Perchoirs :</strong> 1m de hauteur, à 25cm du mur. Compter 15-20cm de perchoir par poule.",
+                norm_nest: "<strong>Pondoirs :</strong> 30x30x30cm. Sombre et calme. 1 nid pour 5 poules.",
+                norm_temp: "<strong>Température :</strong> Baissez de 2°C/semaine (Départ 35°C -> Final 24°C). Évitez les variations brusques.",
+                // Feed
+                feed_title: "Alimentation & Nutrition", feed_subtitle: "Calcul des besoins journaliers et gestion des transitions.",
+                feed_calc_title: "Calculateur de Ration", lbl_age: "Âge",
+                feed_total_daily: "Besoin Journalier Total", feed_distribute: "À distribuer à heures fixes",
+                feed_rules_title: "Règles d'Or :",
+                rule_water: "<strong>Eau :</strong> À volonté ! (Env. 125L / poule sur 72 semaines).",
+                rule_time: "<strong>Horaires :</strong> 2 fois par jour (ex: 8h00 et 16h00).",
+                rule_calc: "<strong>Calcium :</strong> Dès la 30ème semaine, ajoutez des coquilles d'huîtres.",
+                rule_grit: "<strong>Grit (Gravier) :</strong> 500g/100 poules/semaine pour faciliter la digestion.",
+                trans_title: "Transition Alimentaire", trans_warn: "Ne jamais changer d'aliment brusquement (risque de diarrhée/arrêt de ponte).",
+                day_1: "Jour 1", day_2: "Jour 2", day_3: "Jour 3", day_5: "Jour 5",
+                old_100: "Ancien: 100%", new_0: "Nouveau: 0%", new_100: "Nouveau: 100%",
+                // Health
+                health_title: "Santé & Prophylaxie", health_subtitle: "Planning de vaccination et identification des maladies.",
+                vac_calc_title: "Générateur de Calendrier", lbl_arrival_date: "Date d'arrivée des poussins",
+                vac_placeholder: "Sélectionnez une date pour voir le planning.",
+                note_title: "Note :", vac_note: "Donnez des vitamines 1 jour avant, le jour même, et 1 jour après le vaccin. Utilisez de l'eau non chlorée.",
+                dis_title: "Symptômes & Maladies",
+                sym_paralysis: "Paralysie / Boiterie", sym_diarrhea: "Diarrhée", sym_resp: "Respiration / Toux",
+                dis_marek: "Maladie de Marek :", desc_marek: "Souvent chez les jeunes. Amaigrissement, une patte en avant/arrière.",
+                dis_cholera: "Choléra :", desc_cholera: "Paralysie des ailes et pattes.",
+                dis_cocc: "Coccidiose :", desc_cocc: "Diarrhée sanguinolente, ailes pendantes.",
+                desc_cholera_d: "Diarrhée jaune ou verte.","dis_bronch": "Bronchite Infectieuse :", desc_bronch: "Toux, œufs déformés.",
+                dis_newc: "Newcastle (Peste) :", desc_newc: "Difficulté respiratoire, torticolis, mortalité élevée.",
+                // Sim
+                sim_title: "Simulation \"Pratika\"", sim_subtitle: "Simulateur de production pour estimer votre projet.",
+                lbl_sim_birds: "Nombre de Poules au départ", btn_run_sim: "Lancer la Simulation",
+                sim_res_peak: "Pic de Production (Jour)", sim_res_rate: "à 94% de réussite",
+                sim_res_feed: "Conso. Aliment (Cycle)", sim_res_space: "Surface Pondeuse", sim_res_dens: "à 6 poules/m²",
+                sim_res_water: "Eau Totale (Cycle)",
+                sim_tips_title: "Conseils Pratiques pour", sim_tips_birds: "poules",
+                tip_feeder: "Prévoir mangeoires", tip_nest: "Installer nids", tip_perch: "Perchoirs",
+                tip_light: "Éclairage", tip_debec: "Débécage recommandé entre le 15ème jour et la 18ème semaine.",
+                tip_ammonia: "Attention : Si la litière sent l'ammoniaque, changez-la immédiatement.","sim_empty": "Entrez un nombre de poules pour voir les estimations techniques."
+            },
+            mg: {
+                // Nav
+                nav_home: "Fandraisana", nav_housing: "Trano & Toerana", nav_feeding: "Sakafo", 
+                nav_health: "Fahasalamana", nav_sim: "Fanaovana Kajy", nav_sim_short: "Kajy",
+                // PRO / Modals / Buttons
+                btn_confirm: "Hamafiso",
+                pro_title: "Sata PRO",
+                pro_desc: "Sokafy ny fitaovana rehetra ao amin'ny application.",
+                pro_sms: "Alefaso SMS any amin'ny <strong class='text-green-700 whitespace-nowrap'>034 97 429 61</strong> ny ID eo ambony mba ahazoanao ny kaody.",
+                pro_note12: "Rehefa voaloa: tsindrio <strong>in-12</strong> ny logo \"APP MADA\" (ambony havia) hanokafana ny fampidirana kaody.",
+                btn_understood: "Azoko",
+                id_label: "ID Fitaovana (Tokanana)",
+                price_label: "Sarany :",
+                admin_title: "Fanokafana (Admin)",
+                // Source info removed here
+                // Home
+                home_title: "Torolalana momba ny Fiompiana Maoderina", home_subtitle: "Teknika ho an'ny akoho manatody lava (Pondeuse).",
+                card1_title: "Tombony", card1_desc: "Raha voatana tsara ny fepetra, mety hahazoana tombony 100%. Mahavita manatody 295-305 ao anatin'ny 72 herinandro.",
+                card2_title: "Fepetra Ilaina", card2_desc: "Tena ilaina ny hafanana (33-35°C am-piandohana) sy ny hazavana. Tsy tokony hisy rivotra mifofo ao amin'ny zanak'akoho.",
+                card3_title: "Fahadiovana", card3_desc: "Ny fahadiovana sy ny 'vide sanitaire' 15 andro no fiarovana voalohany amin'ny aretina.",
+                chart_title: "Tsingerim-pamokarana", cycle_start: "Fanombohana", cycle_peak: "Faratampony", cycle_end: "Fiafarany",
+                // Housing
+                housing_title: "Trano & Fitaovana", housing_subtitle: "Kajy ny velaran'ny trano sy ny fenitra.",
+                calc_space_title: "Kajy ny Velaran'ny Trano", lbl_birds_count: "Isan'ny akoho",
+                lighting_req: "Hazavana ilaina", building_norms_title: "Fenitry ny Trano",
+                norm_orientation: "<strong>Fitodika :</strong> Mifanapaka amin'ny rivotra mba tsy hafana loatra.",
+                norm_floor: "<strong>Fanambany :</strong> Simenitra na tany voadama mora sasana. Lafika 8-10cm.",
+                norm_perch: "<strong>Fiteroteronana :</strong> 1m ny haavony, 25cm miala amin'ny rindrina. 15-20cm isaky ny akoho.",
+                norm_nest: "<strong>Akany (Pondoir) :</strong> 30x30x30cm. Maizimaizina sy milamina. Akany 1 isaky ny akoho 5.",
+                norm_temp: "<strong>Hafanana :</strong> Ahena 2°C isan-kerinandro (35°C -> 24°C). Tsy azo atao miovaova be.",
+                // Feed
+                feed_title: "Sakafo & Otrikaina", feed_subtitle: "Kajy ny sakafo isan'andro sy ny tetezamita.",
+                feed_calc_title: "Kajy ny Sakafo Isan'andro", lbl_age: "Taona (Herinandro)",
+                feed_total_daily: "Fitambarany isan'andro", feed_distribute: "Omena amin'ny ora raikitra",
+                feed_rules_title: "Fitsipika Volamena :",
+                rule_water: "<strong>Rano :</strong> Tsy ferana ! (Manodidina ny 125L / akoho mandritra ny 72 herinandro).",
+                rule_time: "<strong>Ora :</strong> In-droa isan'andro (oh: 8ora maraina sy 4ora hariva).",
+                rule_calc: "<strong>Kalsioma :</strong> Manomboka faha-30 herinandro, ampio akorandriaka.",
+                rule_grit: "<strong>Vatokely (Grit) :</strong> 500g/100 akoho/herinandro hanampy ny fandevonan-kanina.",
+                trans_title: "Tetezamita Ara-tsakafo", trans_warn: "Tsy azo ovaina tampoka ny sakafo (miteraka aretin-kibo/mihena atody).",
+                day_1: "Andro 1", day_2: "Andro 2", day_3: "Andro 3", day_5: "Andro 5",
+                old_100: "Taloha: 100%", new_0: "Vaovao: 0%", new_100: "Vaovao: 100%",
+                // Health
+                health_title: "Fahasalamana & Vaksiny", health_subtitle: "Tetiandro fanaovana vaksiny sy famantarana aretina.",
+                vac_calc_title: "Mpamorona Tetiandro", lbl_arrival_date: "Daty nahatongavan'ny akoho",
+                vac_placeholder: "Safidio ny daty hahitana ny tetiandro.",
+                note_title: "Fanamarihana :", vac_note: "Omeo vitamina 1 andro mialoha, ny andro anaovana azy, ary 1 andro aoriana. Rano tsy misy fanafody ampiasaina.",
+                dis_title: "Soritr'aretina",
+                sym_paralysis: "Mandringa / Tsy afa-mitsangana", sym_diarrhea: "Mivalana", sym_resp: "Sempotra / Mikohaka",
+                dis_marek: "Aretina Marek :", desc_marek: "Matetika amin'ny akoho kely. Mihamahia, tongotra iray mandroso/iray mihemotra.",
+                dis_cholera: "Choléra :", desc_cholera: "Tsy afaka mihetsika ny elatra sy tongotra.",
+                dis_cocc: "Kankana (Coccidiose) :", desc_cocc: "Mivalana misy ra, elatra miraviravy.",
+                desc_cholera_d: "Fivalanana mavo na maitso.",
+                dis_bronch: "Bronchite Infectieuse :", desc_bronch: "Mikohaka, atody miova endrika.",
+                dis_newc: "Pesta (Newcastle) :", desc_newc: "Sempotra, miolakolana ny tendany, maro ny maty.",
+                // Sim
+                sim_title: "Fanaovana Kajy \"Pratika\"", sim_subtitle: "Vinavina ho an'ny tetikasanao.",
+                lbl_sim_birds: "Isan'ny akoho atomboka", btn_run_sim: "Alefa ny Kajy",
+                sim_res_peak: "Faratampony (Isan'andro)", sim_res_rate: "taha 94%",
+                sim_res_feed: "Sakafo lany (Tsingerina)", sim_res_space: "Velaran'ny Trano", sim_res_dens: "6 akoho/m²",
+                sim_res_water: "Rano lany (Tsingerina)",
+                sim_tips_title: "Torohevitra ho an'ny akoho", sim_tips_birds: "",
+                tip_feeder: "Isan'ny fihinanana", tip_nest: "Isan'ny akany", tip_perch: "Fiteroteronana",
+                tip_light: "Hazavana", tip_debec: "Fanapahana vava (débécage) eo amin'ny faha-15 andro ka hatramin'ny faha-18 herinandro.",
+                tip_ammonia: "Tandremana : Raha maimbo amoniaka ny trano dia ovay haingana ny lafika.",
+                sim_empty: "Ampidiro ny isan'ny akoho hanaovana ny vinavina."
+            }
+        };
+
+        // Current Language State
+        let currentLang = 'fr';
+
+        // Select Options Translation Helper
+        const feedOptions = {
+            fr: [
+                {v: 10, t: "Poussin - Semaine 1 (10g)"},
+                {v: 20, t: "Poussin - Semaine 2 (20g)"},
+                {v: 30, t: "Poussin - Semaine 4 (30g)"},
+                {v: 50, t: "Poussin - Semaine 8 (50-55g)"},
+                {v: 57, t: "Poulette - Semaine 9 (57g)"},
+                {v: 70, t: "Poulette - Semaine 12 (70g)"},
+                {v: 88, t: "Poulette - Semaine 18 (88g)"},
+                {v: 95, t: "Entrée Ponte - Semaine 20 (95g)"},
+                {v: 125, t: "Pondeuse en production (125-130g)"}
+            ],
+            mg: [
+                {v: 10, t: "Zanak'akoho - Herinandro 1 (10g)"},
+                {v: 20, t: "Zanak'akoho - Herinandro 2 (20g)"},
+                {v: 30, t: "Zanak'akoho - Herinandro 4 (30g)"},
+                {v: 50, t: "Zanak'akoho - Herinandro 8 (50-55g)"},
+                {v: 57, t: "Vantony - Herinandro 9 (57g)"},
+                {v: 70, t: "Vantony - Herinandro 12 (70g)"},
+                {v: 88, t: "Vantony - Herinandro 18 (88g)"},
+                {v: 95, t: "Manomboka Manatody (95g)"},
+                {v: 125, t: "Mpanatody (125-130g)"}
+            ]
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Init Auth First
+            initAuth();
+
+            // Init Libraries
+            if (window.lucide) lucide.createIcons();
+            if (window.Chart) initChart();
+            
+            // Populate Select
+            updateFeedOptions();
+
+            // Default Actions
+            switchTab('home');
+            calculateHousing();
+            toggleLanguage(); // Trigger initial render of FR text if needed, or just sets UI
+            // Force FR initially (toggleLanguage toggles, so if current is FR, calling it switches to MG. Let's just updateText)
+            updateContent();
+        });
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'fr' ? 'mg' : 'fr';
+            
+            // Update Toggle Button UI
+            const btnText = document.getElementById('langText');
+            const btnIcon = document.getElementById('langIcon');
+            if(currentLang === 'mg') {
+                btnText.innerText = 'FRANÇAIS';
+                btnIcon.innerText = '🇫🇷';
+            } else {
+                btnText.innerText = 'MALAGASY';
+                btnIcon.innerText = '🇲🇬';
+            }
+
+            updateContent();
+        }
+
+        function updateContent() {
+            // Static Text
+            document.querySelectorAll('[data-key]').forEach(el => {
+                const key = el.getAttribute('data-key');
+                if(translations[currentLang][key]) {
+                    el.innerHTML = translations[currentLang][key];
+                }
+            });
+
+            // Re-run dynamic functions to update units/labels
+            calculateHousing();
+            updateFeedOptions(); // Update select dropdown
+            calcFeed();
+            generateVaccines();
+            runSimulation();
+        }
+
+        function updateFeedOptions() {
+            const select = document.getElementById('feedAge');
+            const savedValue = select.value;
+            select.innerHTML = '';
+            feedOptions[currentLang].forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt.v;
+                option.innerText = opt.t;
+                select.appendChild(option);
+            });
+            if(savedValue) select.value = savedValue;
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('cycleChart').getContext('2d');
+            window.cycleChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['20', '22', '24', '28 (Pic)', '35', '45', '60', '72'],
+                    datasets: [{
+                        label: '%',
+                        data: [10, 50, 88, 94, 90, 82, 74, 60],
+                        borderColor: '#15803d',
+                        backgroundColor: 'rgba(21, 128, 61, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, max: 100 } }
+                }
+            });
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            const target = document.getElementById(tabId);
+            if(target) target.classList.add('active');
+            
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                if(el.dataset.tab === tabId) {
+                    el.classList.add('bg-green-100', 'text-green-800');
+                    el.classList.remove('text-gray-700');
+                } else {
+                    el.classList.remove('bg-green-100', 'text-green-800');
+                    el.classList.add('text-gray-700');
+                }
+            });
+            
+            // Mobile Nav
+            document.querySelectorAll('.md\\:hidden button').forEach(el => {
+                 if(el.dataset.tab === tabId) {
+                    el.classList.add('text-green-600', 'font-bold');
+                    el.classList.remove('text-gray-600');
+                } else {
+                    el.classList.remove('text-green-600', 'font-bold');
+                    el.classList.add('text-gray-600');
+                }
+            });
+        }
+
+        // Logic: Housing
+        function calculateHousing() {
+            const raw = parseInt(document.getElementById('housingInput').value) || 0;
+            const count = isPro() ? raw : 0; // no results until PRO is unlocked
+            const poussinSpace = (count / 30).toFixed(1); 
+            const pouletteSpace = (count / 12).toFixed(1);
+            const pondeuseSpace = (count / 5).toFixed(1);
+            const lighting = Math.ceil(pondeuseSpace * 3);
+
+            document.getElementById('resPoussin').innerText = `${poussinSpace} m²`;
+            document.getElementById('resPoulette').innerText = `${pouletteSpace} m²`;
+            document.getElementById('resPondeuse').innerText = `${pondeuseSpace} m²`;
+            document.getElementById('resLighting').innerText = `${lighting} Watts`;
+
+            // Dynamic Labels inside function (if not handled by data-key)
+            const unitBird = currentLang === 'fr' ? 'sujets' : 'akoho';
+            document.getElementById('lbl_poussin').innerText = currentLang === 'fr' ? "Poussins (0-8 sem)" : "Zanak'akoho (0-8 herinandro)";
+            document.getElementById('norm_poussin').innerText = currentLang === 'fr' ? `Norme: 30-40 ${unitBird}/m²` : `Fenitra: 30-40 ${unitBird}/m²`;
+            
+            document.getElementById('lbl_poulette').innerText = currentLang === 'fr' ? "Poulettes (8-20 sem)" : "Vantony (8-20 herinandro)";
+            document.getElementById('norm_poulette').innerText = currentLang === 'fr' ? `Norme: 12-20 ${unitBird}/m²` : `Fenitra: 12-20 ${unitBird}/m²`;
+
+            document.getElementById('lbl_pondeuse').innerText = currentLang === 'fr' ? "Pondeuses (>20 sem)" : "Mpanatody (>20 herinandro)";
+            document.getElementById('norm_pondeuse').innerText = currentLang === 'fr' ? `Norme: 5-6 ${unitBird}/m²` : `Fenitra: 5-6 ${unitBird}/m²`;
+        }
+
+        // Logic: Feed
+        function calcFeed() {
+            const rawBirds = parseInt(document.getElementById('feedBirds').value) || 0;
+            const birds = isPro() ? rawBirds : 0; // no results until PRO is unlocked
+            const gramsPerBird = parseInt(document.getElementById('feedAge').value) || 0;
+            const totalKg = (birds * gramsPerBird) / 1000;
+            const unit = currentLang === 'fr' ? 'sujet' : 'akoho';
+            
+            document.getElementById('totalFeedResult').innerText = `${totalKg.toFixed(2)} kg`;
+            document.getElementById('feedPerBird').innerText = `${gramsPerBird}g / ${unit}`;
+        }
+
+        // Logic: Vaccines
+        function generateVaccines() {
+            const dateInput = document.getElementById('vacDate').value;
+            const list = document.getElementById('vaccineList');
+            if(!dateInput) {
+                list.innerHTML = `<p class="text-gray-500 italic text-sm">${translations[currentLang].vac_placeholder}</p>`;
+                return;
+            }
+
+            const start = new Date(dateInput);
+            list.innerHTML = '';
+            
+            const locale = currentLang === 'fr' ? 'fr-FR' : 'fr-FR'; // fr-FR works for date format in MG mostly
+            const methodWater = currentLang === 'fr' ? "Eau" : "Rano";
+            const dayPrefix = currentLang === 'fr' ? "J-" : "Andro ";
+
+            const vaccines = [
+                { day: 6, name: "HB1 (Peste)", method: `${methodWater} (8L)` },
+                { day: 12, name: "Gumboro (Cevac)", method: `${methodWater} (12L)` },
+                { day: 16, name: "Gumboro (Rappel)", method: `${methodWater} (15L)` },
+                { day: 21, name: "Lasota (Peste)", method: `${methodWater} (20L)` }
+            ];
+
+            vaccines.forEach(v => {
+                const vacDate = new Date(start);
+                vacDate.setDate(start.getDate() + v.day);
+                const dateString = vacDate.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' });
+                
+                const item = `
+                    <div class="flex items-center justify-between p-3 bg-white border border-gray-100 rounded shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-blue-100 text-blue-600 font-bold p-2 rounded text-xs w-16 text-center">${dayPrefix}${v.day}</div>
+                            <div>
+                                <p class="font-bold text-gray-800">${v.name}</p>
+                                <p class="text-xs text-gray-500">${dateString}</p>
+                            </div>
+                        </div>
+                        <div class="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-600">${v.method}</div>
+                    </div>
+                `;
+                list.innerHTML += item;
+            });
+        }
+
+        // Logic: Simulation
+        function runSimulation() {
+            if(!isPro()) return; // gated: no figures until PRO is unlocked
+            const birds = parseInt(document.getElementById('simBirds').value);
+            if(!birds || birds < 1) return;
+
+            const peakEggs = Math.floor(birds * 0.94);
+            const totalFeedTonnes = ((birds * 52) / 1000).toFixed(1);
+            const space = Math.ceil(birds / 6);
+            const water = ((birds * 125) / 1000).toFixed(1);
+
+            const feeders = Math.ceil(birds / 20); 
+            const nests = Math.ceil(birds / 5);
+            const perchMeters = Math.ceil((birds * 20) / 100);
+            const lightWatts = Math.ceil(space * 3);
+
+            // Units Translation
+            const uEgg = currentLang === 'fr' ? "Œufs" : "Atody";
+            const uTon = currentLang === 'fr' ? "Tonnes" : "Taona"; // 'Tonnes' in MG is often 'Taonina' but 'Taona' used in context or just 'T'. 'Taonina' is better. 'Taona' means Year. Correcting to 'T'.
+            const uTonCorrect = currentLang === 'fr' ? "Tonnes" : "Taonina";
+
+            document.getElementById('simPeakEggs').innerText = `${peakEggs} ${uEgg}`;
+            document.getElementById('simTotalFeed').innerText = `${totalFeedTonnes} ${uTonCorrect}`;
+            document.getElementById('simSpace').innerText = `${space} m²`;
+            document.getElementById('simWater').innerText = `${water} m³`;
+            
+            document.getElementById('simCountDisplay').innerText = birds;
+            document.getElementById('simFeeders').innerText = feeders;
+            document.getElementById('simNests').innerText = nests;
+            document.getElementById('simPerch').innerText = perchMeters;
+            document.getElementById('simLight').innerText = lightWatts;
+
+            document.getElementById('simEmpty').classList.add('hidden');
+            document.getElementById('simResults').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
