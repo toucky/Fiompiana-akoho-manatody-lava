@@ -20,6 +20,14 @@ jobs:
             'https://xvwsdoqiesnqpyrqahwf.supabase.co/storage/v1/object/public/app-mada-apks/TEST-Laoka-Isanandro-INSTALLABLE-V2-SANS-ID-APPAREIL.apk' \
             -o 'Laoka-Isanandro-APP-MADA-INSTALLABLE-V2-SANS-ID-APPAREIL.apk'
           echo 'b9c64cdb86678c1ceb5ede4e3d18921dc972bac2d9572c5048159a423a39a1bc  Laoka-Isanandro-APP-MADA-INSTALLABLE-V2-SANS-ID-APPAREIL.apk' | sha256sum -c -
+      - name: Verify with Android apksigner
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK='Laoka-Isanandro-APP-MADA-INSTALLABLE-V2-SANS-ID-APPAREIL.apk'
+          APKSIGNER="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools" -type f -name apksigner 2>/dev/null | sort -V | tail -1)"
+          test -n "$APKSIGNER"
+          "$APKSIGNER" verify --verbose --print-certs "$APK"
       - name: Commit APK to temporary branch
         shell: bash
         run: |
