@@ -1,0 +1,31 @@
+name: Temp Laoka APK delivery
+on:
+  push:
+    branches:
+      - tmp-laoka-delivery-20260903
+permissions:
+  contents: write
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-laoka-delivery-20260903
+      - name: Download and verify Laoka APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 --connect-timeout 15 \
+            'https://xvwsdoqiesnqpyrqahwf.supabase.co/storage/v1/object/public/app-mada-apks/TEST-Laoka-Isanandro-APP-MADA-15000Ar-PAYMENT-ADMIN-NO-DEVICE-ID.apk' \
+            -o 'Laoka-Isanandro-APP-MADA-TEST-SANS-ID-APPAREIL.apk'
+          echo 'c2c7f5cfcb7b99e841452d647c26dc52756bafe2162fc61a0de901048e79765a  Laoka-Isanandro-APP-MADA-TEST-SANS-ID-APPAREIL.apk' | sha256sum -c -
+      - name: Commit APK to temporary branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'APP MADA Delivery'
+          git config user.email 'actions@users.noreply.github.com'
+          git add Laoka-Isanandro-APP-MADA-TEST-SANS-ID-APPAREIL.apk
+          git commit -m '[skip ci] Temp: livrer APK Laoka sans ID appareil'
+          git push origin HEAD:tmp-laoka-delivery-20260903
